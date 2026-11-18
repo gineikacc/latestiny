@@ -1,0 +1,11 @@
+{
+  "name": "destiny-stream-watch",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Tracks how often Destiny starts stream on time at 1:00 PM Miami time.",
+  "scripts": {
+    "update": "node scripts/update.mjs",
+    "serve": "python3 -m http.server 8000"
+  }
+}

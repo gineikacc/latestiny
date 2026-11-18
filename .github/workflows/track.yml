@@ -1,0 +1,41 @@
+name: Track stream starts
+
+on:
+  schedule:
+    # Every 15 minutes. GitHub may start scheduled runs a little late, but the
+    # start time always comes from Kick's API, not from when this job runs.
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: track-streams
+  cancel-in-progress: false
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Fetch stream starts from Kick
+        run: node scripts/update.mjs
+
+      - name: Commit data if it changed
+        run: |
+          if git diff --quiet -- data/streams.json; then
+            echo "No new streams."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/streams.json
+          git commit -m "data: update stream starts"
+          git push

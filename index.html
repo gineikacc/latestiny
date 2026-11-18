@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Destiny stream watch</title>
+    <meta
+      name="description"
+      content="How often Destiny starts stream on time at 1:00 PM Miami time, with the full year at a glance."
+    />
+    <link rel="stylesheet" href="assets/style.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23cfe7bd'/%3E%3Ctext x='16' y='22' font-family='sans-serif' font-size='15' font-weight='700' text-anchor='middle' fill='%232b3238'%3E1%3C/text%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <main class="page">
+      <header class="masthead">
+        <div class="titles">
+          <h1>Destiny stream watch</h1>
+          <p class="sub">
+            Scheduled for <strong>1:00 PM</strong> Miami time. A start of
+            <strong>1:09 PM</strong> or earlier counts as on time.
+          </p>
+        </div>
+        <a
+          class="watch-link"
+          href="https://kick.com/destiny"
+          target="_blank"
+          rel="noreferrer noopener"
+          >kick.com/destiny&nbsp;↗</a
+        >
+      </header>
+
+      <section class="stats" id="stats" aria-label="On-time statistics"></section>
+
+      <section class="card" aria-labelledby="calendar-heading">
+        <div class="card-head">
+          <div>
+            <h2 id="calendar-heading" class="card-title">
+              <span id="year-label">2026</span> at a glance
+            </h2>
+            <p class="card-sub" id="range-note"></p>
+          </div>
+          <ul class="legend" aria-label="Legend">
+            <li><i class="swatch early"></i>Early</li>
+            <li><i class="swatch ontime"></i>On time</li>
+            <li><i class="swatch late1"></i>10–29 min</li>
+            <li><i class="swatch late2"></i>30–59 min</li>
+            <li><i class="swatch late3"></i>1–2 hr</li>
+            <li><i class="swatch late4"></i>2 hr+</li>
+            <li><i class="swatch off"></i>No stream</li>
+            <li><i class="swatch untracked"></i>Not tracked</li>
+          </ul>
+        </div>
+
+        <div class="calendar-wrap">
+          <div id="calendar" class="calendar"></div>
+        </div>
+
+        <p class="card-foot" id="card-foot"></p>
+      </section>
+
+      <footer class="page-foot">
+        <p>
+          Auto-tracked from Kick's public API. The first stream of each day is the
+          one measured; extra streams that day are ignored.
+        </p>
+        <p id="updated"></p>
+      </footer>
+    </main>
+
+    <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+
+    <noscript>
+      <p class="noscript">This page needs JavaScript to draw the calendar.</p>
+    </noscript>
+
+    <script src="assets/app.js" defer></script>
+  </body>
+</html>
