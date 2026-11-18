@@ -55,8 +55,8 @@ const state = {
   days: new Map(),
   gaps: new Set(),
   year: null,
-  view: 'year',
-  monthsPerRow: 3,
+  view: 'months',
+  monthsPerRow: 6,
   trackingSince: null,
   latest: null,
 };
@@ -494,9 +494,9 @@ function setupTooltip() {
 
 function storedView() {
   try {
-    return localStorage.getItem(VIEW_KEY) === 'months' ? 'months' : 'year';
+    return localStorage.getItem(VIEW_KEY) === 'year' ? 'year' : 'months';
   } catch {
-    return 'year';
+    return 'months';
   }
 }
 
@@ -535,9 +535,9 @@ function setupViewToggle() {
 function storedMonthsPerRow() {
   try {
     const columns = Number(localStorage.getItem(COLUMNS_KEY));
-    return MONTH_COLUMNS.includes(columns) ? columns : 3;
+    return MONTH_COLUMNS.includes(columns) ? columns : 6;
   } catch {
-    return 3;
+    return 6;
   }
 }
 

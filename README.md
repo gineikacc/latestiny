@@ -4,7 +4,7 @@ A tiny static page that tracks how often Destiny starts stream on time.
 Scheduled start: **1:00 PM Miami time** (`America/New_York`).
 On time means **1:09 PM or earlier**; arriving early also counts.
 
-- Two layouts: GitHub-style year grid and month-by-month view (3, 4, or 6 months per row)
+- Two layouts: GitHub-style year grid and month-by-month view (defaults to the month view with 6 months per row; 3 and 4 are also selectable)
 - Monday-first weeks, square color tiles, every tile shows its lateness (`-H:MM` when early)
 - Stats: on-time days, average lateness, longest wait, stream days
 - No framework, no build step, no dependencies — just HTML, CSS, and a little JS
