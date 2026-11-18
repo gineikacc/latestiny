@@ -275,6 +275,19 @@ function renderCalendar() {
   $('#card-foot').innerHTML = `${measured}${missing} Gray days had no stream; dashed days are missing data. Both are left out of the stats.`;
 }
 
+function monthAverage(year, month) {
+  let count = 0;
+  let sum = 0;
+
+  for (const day of state.days.values()) {
+    if (day.year !== year || day.month !== month) continue;
+    count += 1;
+    sum += day.late;
+  }
+
+  return count ? { text: fmtDelta(Math.round(sum / count)), count } : null;
+}
+
 function renderMonths(host, year) {
   const today = todayKey();
 
@@ -282,9 +295,32 @@ function renderMonths(host, year) {
     const block = document.createElement('section');
     block.className = 'month-block';
 
+    const header = document.createElement('div');
+    header.className = 'month-header';
+
     const name = document.createElement('h3');
     name.className = 'month-name';
     name.textContent = MONTH_NAMES[m];
+
+    const avg = monthAverage(year, m + 1);
+    const avgText = document.createElement('span');
+    avgText.className = 'month-avg';
+    if (avg) {
+      const label = document.createElement('span');
+      label.textContent = 'avg';
+      const value = document.createElement('b');
+      value.textContent = avg.text;
+      avgText.append(label, value);
+      const avgTitle = `Average lateness in ${MONTH_NAMES[m]}: ${avg.text} across ${avg.count} stream day${avg.count === 1 ? '' : 's'}`;
+      avgText.setAttribute('aria-label', avgTitle);
+      avgText.title = avgTitle;
+    } else {
+      avgText.textContent = '—';
+      const noAvg = `No average lateness in ${MONTH_NAMES[m]} — no stream days measured`;
+      avgText.setAttribute('aria-label', noAvg);
+      avgText.title = noAvg;
+    }
+    header.append(name, avgText);
 
     const weekdays = document.createElement('div');
     weekdays.className = 'month-weekdays';
@@ -322,7 +358,7 @@ function renderMonths(host, year) {
       }
     }
 
-    block.append(name, weekdays, grid);
+    block.append(header, weekdays, grid);
     host.append(block);
   }
 }
