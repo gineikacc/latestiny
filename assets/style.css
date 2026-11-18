@@ -11,10 +11,9 @@
 
   --early: #bfe3d4;
   --ontime: #d3e9bd;
-  --late1: #f7e9a9;
-  --late2: #f8d3a9;
-  --late3: #f2b7ad;
-  --late4: #d8bfe5;
+  --late1: #f7e6a1;
+  --late2: #f6c78e;
+  --late3: #efa9a0;
   --off: #e8e5dd;
   --unknown: #eee6d9;
   --untracked: #f2efe8;
@@ -34,10 +33,9 @@
 
     --early: #8fc3b1;
     --ontime: #a8c98d;
-    --late1: #d8c977;
-    --late2: #d9a875;
-    --late3: #cd8a80;
-    --late4: #b394c4;
+    --late1: #d6c46f;
+    --late2: #d69a5d;
+    --late3: #c97a70;
     --off: #2e3237;
     --unknown: #302c25;
     --untracked: #24282c;
@@ -245,7 +243,6 @@ h1 {
 .swatch.late1 { background: var(--late1); }
 .swatch.late2 { background: var(--late2); }
 .swatch.late3 { background: var(--late3); }
-.swatch.late4 { background: var(--late4); }
 .swatch.off { background: var(--off); }
 .swatch.unknown {
   background: var(--unknown);
@@ -360,7 +357,6 @@ h1 {
 .day.late1 { background: var(--late1); }
 .day.late2 { background: var(--late2); }
 .day.late3 { background: var(--late3); }
-.day.late4 { background: var(--late4); }
 .day.off { background: var(--off); }
 .day.unknown {
   background: var(--unknown);

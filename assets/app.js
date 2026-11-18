@@ -93,7 +93,7 @@ function todayKey() {
 /* ---------- formatting ---------- */
 
 function fmtDelta(minutes) {
-  const sign = minutes < 0 ? '-' : '+';
+  const sign = minutes < 0 ? '-' : '';
   const abs = Math.abs(minutes);
   return `${sign}${Math.floor(abs / 60)}:${pad(abs % 60)}`;
 }
@@ -101,10 +101,9 @@ function fmtDelta(minutes) {
 function bucketOf(minutes) {
   if (minutes < 0) return 'early';
   if (minutes <= ON_TIME_MINUTES) return 'ontime';
-  if (minutes <= 29) return 'late1';
-  if (minutes <= 59) return 'late2';
-  if (minutes <= 119) return 'late3';
-  return 'late4';
+  if (minutes <= 60) return 'late1';
+  if (minutes <= 120) return 'late2';
+  return 'late3';
 }
 
 function humanLateness(minutes) {
