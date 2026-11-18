@@ -6,6 +6,8 @@ const MS_DAY = 86_400_000;
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+// Monday-first order used by the calendar grid.
+const GRID_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const partsFmt = new Intl.DateTimeFormat('en-US', {
   timeZone: TZ,
@@ -34,6 +36,7 @@ const updatedFmt = new Intl.DateTimeFormat('en-US', {
 
 const state = {
   days: new Map(),
+  gaps: new Set(),
   year: null,
   trackingSince: null,
   latest: null,
@@ -211,10 +214,12 @@ function renderCalendar() {
 
   const jan1 = new Date(Date.UTC(year, 0, 1));
   const dec31 = new Date(Date.UTC(year, 11, 31));
+  // Weeks start on Monday: back up to the Monday on/before Jan 1 and
+  // forward to the Sunday on/after Dec 31.
   const gridStart = new Date(jan1);
-  gridStart.setUTCDate(jan1.getUTCDate() - jan1.getUTCDay());
+  gridStart.setUTCDate(jan1.getUTCDate() - ((jan1.getUTCDay() + 6) % 7));
   const gridEnd = new Date(dec31);
-  gridEnd.setUTCDate(dec31.getUTCDate() + (6 - dec31.getUTCDay()));
+  gridEnd.setUTCDate(dec31.getUTCDate() + (6 - ((dec31.getUTCDay() + 6) % 7)));
   const totalWeeks = Math.round((gridEnd - gridStart) / (7 * MS_DAY)) + 1;
   const narrow = window.matchMedia('(max-width: 860px)').matches;
   const firstHalf = narrow ? totalWeeks : Math.ceil(totalWeeks / 2);
@@ -232,9 +237,14 @@ function renderCalendar() {
     note.textContent = 'Every tile is one day';
   }
 
-  $('#card-foot').innerHTML = count
-    ? `<strong>${count}</strong> stream day${count === 1 ? '' : 's'} measured in ${year}. Gray days had no stream and are left out of the stats.`
+  const gapCount = [...state.gaps].filter((key) => yearOf(key) === year).length;
+  const measured = count
+    ? `<strong>${count}</strong> stream day${count === 1 ? '' : 's'} measured in ${year}.`
     : `No streams tracked in ${year} yet.`;
+  const missing = gapCount
+    ? ` ${gapCount} dashed day${gapCount === 1 ? '' : 's'} had a stream but no archived start time.`
+    : '';
+  $('#card-foot').innerHTML = `${measured}${missing} Gray days had no stream; dashed days are missing data. Both are left out of the stats.`;
 }
 
 function renderBlock(gridStart, startWeek, weekCount, year) {
@@ -270,10 +280,10 @@ function renderBlock(gridStart, startWeek, weekCount, year) {
   const labels = document.createElement('div');
   labels.className = 'day-labels';
   labels.append(
-    ...WEEKDAYS.map((name, index) => {
+    ...GRID_DAYS.map((name, index) => {
       const span = document.createElement('span');
       span.textContent = name;
-      if (index === 1 || index === 3 || index === 5) span.className = 'show';
+      if (index === 0 || index === 2 || index === 4) span.className = 'show';
       return span;
     }),
   );
@@ -317,6 +327,10 @@ function buildDayCell(date, today) {
   } else if (key > today) {
     cell.classList.add('future');
     cell.dataset.tip = `<strong>${longKeyDate(key)}</strong><span>Upcoming</span>`;
+  } else if (state.gaps.has(key)) {
+    cell.classList.add('unknown');
+    cell.dataset.tip = `<strong>${longKeyDate(key)}</strong><span>Stream happened · start time not archived</span>`;
+    cell.setAttribute('aria-label', `${longKeyDate(key)}: stream happened, start time not archived`);
   } else if (state.trackingSince && key < state.trackingSince) {
     cell.classList.add('untracked');
     cell.dataset.tip = `<strong>${longKeyDate(key)}</strong><span>Before tracking started</span>`;
@@ -431,6 +445,7 @@ async function init() {
   }
 
   state.days = buildDays(Array.isArray(data.streams) ? data.streams : []);
+  state.gaps = new Set(Array.isArray(data.gaps) ? data.gaps : []);
   const keys = [...state.days.keys()].sort();
   state.trackingSince = keys[0] ?? null;
   state.latest = keys.at(-1) ?? null;

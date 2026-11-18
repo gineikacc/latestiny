@@ -11,6 +11,20 @@ const DATA_FILE = path.join(ROOT, 'data', 'streams.json');
 
 const SLUG = process.env.KICK_SLUG ?? 'destiny';
 const MIN_DURATION_SECONDS = 10 * 60; // ignore accidental sub-10-minute test streams
+const DEDUPE_WINDOW_MS = 90 * 60 * 1000; // same stream, different source
+
+const localDateFmt = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/New_York',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+function localDateKey(iso) {
+  const parts = localDateFmt.formatToParts(new Date(iso));
+  const get = (type) => parts.find((part) => part.type === type)?.value;
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
 
 const UA =
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
@@ -90,7 +104,7 @@ async function main() {
     fetched.set(entry.id, existing ? { ...existing, start: entry.start } : entry);
   }
 
-  let current = { schema: 1, source: `kick.com/${SLUG}`, streams: [] };
+  let current = { schema: 2, source: `kick.com/${SLUG}`, gaps: [], streams: [] };
   try {
     current = JSON.parse(await readFile(DATA_FILE, 'utf8'));
   } catch {
@@ -110,27 +124,53 @@ async function main() {
     );
   }
 
-  const streams = [...merged.values()]
-    .filter((stream) => stream?.id && stream?.start)
+  const mergedStreams = [...merged.values()]
+    .filter((stream) => stream?.id && stream?.start && !Number.isNaN(Date.parse(stream.start)))
     .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
 
-  const before = JSON.stringify(current.streams ?? []);
-  const after = JSON.stringify(streams);
+  // Kick is the most precise source. When it supplies a start for a day that
+  // was backfilled from KickTracker/LWOD, drop the archived copy of the same
+  // stream (within 90 minutes on the same Miami date). A genuinely separate
+  // earlier stream, such as an event followed by the usual stream, is farther
+  // away and survives.
+  const kickStartsByDay = new Map();
+  for (const stream of mergedStreams) {
+    if (stream.source !== 'kick') continue;
+    const day = localDateKey(stream.start);
+    if (!kickStartsByDay.has(day)) kickStartsByDay.set(day, []);
+    kickStartsByDay.get(day).push(Date.parse(stream.start));
+  }
+
+  const streams = mergedStreams.filter((stream) => {
+    if (stream.source === 'kick') return true;
+    const starts = kickStartsByDay.get(localDateKey(stream.start));
+    if (!starts) return true;
+    const start = Date.parse(stream.start);
+    return !starts.some((kickStart) => Math.abs(kickStart - start) <= DEDUPE_WINDOW_MS);
+  });
+
+  // A gap is only a gap until a real start time shows up.
+  const fetchedDays = new Set([...fetched.values()].map((stream) => localDateKey(stream.start)));
+  const gaps = (current.gaps ?? []).filter((day) => !fetchedDays.has(day));
+
+  const before = JSON.stringify({ streams: current.streams ?? [], gaps: current.gaps ?? [] });
+  const after = JSON.stringify({ streams, gaps });
   if (before === after) {
     console.log(`No change (${streams.length} streams tracked).`);
     return;
   }
 
   const next = {
-    schema: 1,
-    source: `kick.com/${SLUG}`,
+    schema: 2,
+    source: `kick.com/${SLUG} + kicktracker.net + LWOD archive`,
     updatedAt: new Date().toISOString(),
+    gaps,
     streams,
   };
 
   await mkdir(path.dirname(DATA_FILE), { recursive: true });
   await writeFile(DATA_FILE, `${JSON.stringify(next, null, 2)}\n`);
-  console.log(`Wrote ${streams.length} streams (${streams.length - (current.streams?.length ?? 0)} new).`);
+  console.log(`Wrote ${streams.length} streams (${current.streams?.length ?? 0} before).`);
 }
 
 main().catch((error) => {

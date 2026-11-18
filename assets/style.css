@@ -16,6 +16,7 @@
   --late3: #f2b7ad;
   --late4: #d8bfe5;
   --off: #e8e5dd;
+  --unknown: #eee6d9;
   --untracked: #f2efe8;
 
   --tile-ink: #39424a;
@@ -38,6 +39,7 @@
     --late3: #cd8a80;
     --late4: #b394c4;
     --off: #2e3237;
+    --unknown: #302c25;
     --untracked: #24282c;
 
     --tile-ink: #23282c;
@@ -245,6 +247,10 @@ h1 {
 .swatch.late3 { background: var(--late3); }
 .swatch.late4 { background: var(--late4); }
 .swatch.off { background: var(--off); }
+.swatch.unknown {
+  background: var(--unknown);
+  border: 1px dashed var(--faint);
+}
 .swatch.untracked {
   background: var(--untracked);
   border: 1px dashed var(--faint);
@@ -356,6 +362,10 @@ h1 {
 .day.late3 { background: var(--late3); }
 .day.late4 { background: var(--late4); }
 .day.off { background: var(--off); }
+.day.unknown {
+  background: var(--unknown);
+  border: 1px dashed var(--faint);
+}
 .day.untracked { background: var(--untracked); }
 .day.future { background: var(--untracked); }
 .day.blank { background: transparent; }
