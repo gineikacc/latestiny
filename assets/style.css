@@ -7,9 +7,8 @@
   --line: #e9e4da;
 
   --gap: 3px;
-  --radius: 7px;
 
-  --early: #10b981;
+  --early: #06b6d4;
   --ontime: #22c55e;
   --late1: #eab308;
   --late2: #f97316;
@@ -60,7 +59,8 @@ body {
 }
 
 .page {
-  max-width: 1120px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
   padding: 48px 24px 40px;
 }
@@ -115,6 +115,81 @@ h1 {
   color: var(--ink);
   border-color: var(--faint);
   background: var(--card);
+}
+
+.masthead-actions {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.masthead-actions .watch-link {
+  margin-top: 0;
+}
+
+.view-toggle {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+}
+
+.view-toggle button {
+  appearance: none;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  transition:
+    color 120ms ease,
+    background 120ms ease;
+}
+
+.view-toggle button:hover {
+  color: var(--ink);
+}
+
+.view-toggle button[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.view-toggle button[aria-pressed='true']:hover {
+  color: var(--bg);
+}
+
+.view-toggle button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.per-row-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  color: var(--faint);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.per-row-toggle[hidden] {
+  display: none;
+}
+
+.per-row-toggle .view-toggle button {
+  padding: 5px 9px;
+  font-size: 11px;
 }
 
 /* ---------- stats ---------- */
@@ -230,7 +305,7 @@ h1 {
   display: inline-block;
   width: 11px;
   height: 11px;
-  border-radius: 3px;
+  border-radius: 0;
 }
 
 .swatch.early { background: var(--early); }
@@ -261,6 +336,11 @@ h1 {
   --tile: clamp(24px, calc((100cqw - 122px) / 27), 33px);
   width: max-content;
   min-width: 100%;
+}
+
+.year-blocks {
+  width: max-content;
+  margin-inline: auto;
 }
 
 .block + .block {
@@ -327,12 +407,14 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius);
+  border-radius: 0;
+  padding: 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: clamp(7.2px, calc(var(--tile) * 0.265), 9px);
+  font-size: clamp(8px, calc(var(--tile) * 0.3), 10px);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
+  line-height: 1;
   color: var(--tile-ink);
   cursor: default;
   user-select: none;
@@ -364,6 +446,65 @@ h1 {
 .day.today {
   outline: 2px solid var(--ink);
   outline-offset: -2px;
+}
+
+/* ---------- month view ---------- */
+
+.calendar.month-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px 26px;
+  width: 100%;
+  min-width: 0;
+}
+
+.calendar.month-grid[data-columns='4'] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 22px 20px;
+}
+
+.calendar.month-grid[data-columns='6'] {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 20px 14px;
+}
+
+.month-block {
+  min-width: 0;
+  padding-top: 11px;
+  border-top: 1px solid var(--line);
+  container-type: inline-size;
+}
+
+.month-name {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.month-weekdays,
+.month-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.month-weekdays {
+  margin-bottom: 4px;
+  color: var(--faint);
+  font-size: 9px;
+  letter-spacing: 0.03em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.month-days .day {
+  aspect-ratio: 1;
+  font-size: clamp(6.3px, 4.1cqw, 13px);
+}
+
+.month-days .day.blank {
+  background: transparent;
 }
 
 .card-foot {
@@ -424,7 +565,7 @@ h1 {
 }
 
 .noscript {
-  max-width: 1120px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 0 24px;
   color: var(--muted);
@@ -463,9 +604,18 @@ h1 {
     gap: 14px;
   }
 
-  .calendar-wrap {
-    margin: 0 -6px;
-    padding: 0 6px 6px;
+  .masthead-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .per-row-toggle {
+    display: none;
+  }
+
+  .calendar.month-grid[data-columns] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 20px;
   }
 
   .months {
@@ -475,6 +625,13 @@ h1 {
   .day-labels {
     width: 30px;
     font-size: 8.5px;
+  }
+}
+
+@media (max-width: 560px) {
+  .calendar.month-grid[data-columns] {
+    grid-template-columns: 1fr;
+    gap: 18px;
   }
 }
 

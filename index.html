@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Destiny stream watch</title>
+    <title>latestiny</title>
     <meta
       name="description"
-      content="How often Destiny starts stream on time at 1:00 PM Miami time, with the full year at a glance."
+      content="latestiny — how often Destiny starts stream on time at 1:00 PM Miami time, with the full year at a glance."
     />
     <link rel="stylesheet" href="assets/style.css" />
     <link
@@ -18,19 +18,25 @@
     <main class="page">
       <header class="masthead">
         <div class="titles">
-          <h1>Destiny stream watch</h1>
+          <h1>latestiny</h1>
           <p class="sub">
             Scheduled for <strong>1:00 PM</strong> Miami time. A start of
             <strong>1:09 PM</strong> or earlier counts as on time.
           </p>
         </div>
-        <a
-          class="watch-link"
-          href="https://kick.com/destiny"
-          target="_blank"
-          rel="noreferrer noopener"
-          >kick.com/destiny&nbsp;↗</a
-        >
+        <div class="masthead-actions">
+          <div class="view-toggle" role="group" aria-label="Calendar view">
+            <button type="button" data-view="year" aria-pressed="true">Year</button>
+            <button type="button" data-view="months" aria-pressed="false">Months</button>
+          </div>
+          <a
+            class="watch-link"
+            href="https://kick.com/destiny"
+            target="_blank"
+            rel="noreferrer noopener"
+            >kick.com/destiny&nbsp;↗</a
+          >
+        </div>
       </header>
 
       <section class="stats" id="stats" aria-label="On-time statistics"></section>
@@ -42,6 +48,14 @@
               <span id="year-label">2026</span> at a glance
             </h2>
             <p class="card-sub" id="range-note"></p>
+            <div class="per-row-toggle" id="per-row-toggle" hidden>
+              <span>Months per row</span>
+              <div class="view-toggle" role="group" aria-label="Months per row">
+                <button type="button" data-columns="3" aria-pressed="true">3</button>
+                <button type="button" data-columns="4" aria-pressed="false">4</button>
+                <button type="button" data-columns="6" aria-pressed="false">6</button>
+              </div>
+            </div>
           </div>
           <ul class="legend" aria-label="Legend">
             <li><i class="swatch early"></i>Early</li>

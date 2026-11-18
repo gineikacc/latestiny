@@ -5,9 +5,26 @@ const EARLY_CUTOFF_HOUR = 9; // a 2 AM start belongs to the previous day's 1 PM 
 const MS_DAY = 86_400_000;
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 // Monday-first order used by the calendar grid.
 const GRID_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const VIEW_KEY = 'latestiny-view';
+const COLUMNS_KEY = 'latestiny-months-per-row';
+const MONTH_COLUMNS = [3, 4, 6];
 
 const partsFmt = new Intl.DateTimeFormat('en-US', {
   timeZone: TZ,
@@ -38,6 +55,8 @@ const state = {
   days: new Map(),
   gaps: new Set(),
   year: null,
+  view: 'year',
+  monthsPerRow: 3,
   trackingSince: null,
   latest: null,
 };
@@ -201,7 +220,9 @@ function renderCalendar() {
   const year = state.year;
   const host = $('#calendar');
   host.textContent = '';
+  host.className = 'calendar';
   $('#year-label').textContent = String(year);
+  syncViewControls();
 
   if (state.days.size === 0) {
     host.innerHTML =
@@ -211,30 +232,38 @@ function renderCalendar() {
     return;
   }
 
-  const jan1 = new Date(Date.UTC(year, 0, 1));
-  const dec31 = new Date(Date.UTC(year, 11, 31));
-  // Weeks start on Monday: back up to the Monday on/before Jan 1 and
-  // forward to the Sunday on/after Dec 31.
-  const gridStart = new Date(jan1);
-  gridStart.setUTCDate(jan1.getUTCDate() - ((jan1.getUTCDay() + 6) % 7));
-  const gridEnd = new Date(dec31);
-  gridEnd.setUTCDate(dec31.getUTCDate() + (6 - ((dec31.getUTCDay() + 6) % 7)));
-  const totalWeeks = Math.round((gridEnd - gridStart) / (7 * MS_DAY)) + 1;
-  const narrow = window.matchMedia('(max-width: 860px)').matches;
-  const firstHalf = narrow ? totalWeeks : Math.ceil(totalWeeks / 2);
+  if (state.view === 'months') {
+    host.classList.add('month-grid');
+    host.dataset.columns = String(state.monthsPerRow);
+    renderMonths(host, year);
+  } else {
+    delete host.dataset.columns;
+    const jan1 = new Date(Date.UTC(year, 0, 1));
+    const dec31 = new Date(Date.UTC(year, 11, 31));
+    // Weeks start on Monday: back up to the Monday on/before Jan 1 and
+    // forward to the Sunday on/after Dec 31.
+    const gridStart = new Date(jan1);
+    gridStart.setUTCDate(jan1.getUTCDate() - ((jan1.getUTCDay() + 6) % 7));
+    const gridEnd = new Date(dec31);
+    gridEnd.setUTCDate(dec31.getUTCDate() + (6 - ((dec31.getUTCDay() + 6) % 7)));
+    const totalWeeks = Math.round((gridEnd - gridStart) / (7 * MS_DAY)) + 1;
+    const narrow = window.matchMedia('(max-width: 860px)').matches;
+    const firstHalf = narrow ? totalWeeks : Math.ceil(totalWeeks / 2);
 
-  host.append(renderBlock(gridStart, 0, firstHalf, year));
-  if (!narrow) {
-    host.append(renderBlock(gridStart, firstHalf, totalWeeks - firstHalf, year));
+    const blocks = document.createElement('div');
+    blocks.className = 'year-blocks';
+    blocks.append(renderBlock(gridStart, 0, firstHalf, year));
+    if (!narrow) {
+      blocks.append(renderBlock(gridStart, firstHalf, totalWeeks - firstHalf, year));
+    }
+    host.append(blocks);
   }
 
   const count = [...state.days.values()].filter((d) => d.year === year).length;
-  const note = $('#range-note');
-  if (state.trackingSince) {
-    note.textContent = `Tracking since ${shortKeyDate(state.trackingSince)} · every tile is one day`;
-  } else {
-    note.textContent = 'Every tile is one day';
-  }
+  const viewNote = state.view === 'months' ? 'one row per week' : 'every tile is one day';
+  $('#range-note').textContent = state.trackingSince
+    ? `Tracking since ${shortKeyDate(state.trackingSince)} · ${viewNote}`
+    : viewNote.charAt(0).toUpperCase() + viewNote.slice(1);
 
   const gapCount = [...state.gaps].filter((key) => yearOf(key) === year).length;
   const measured = count
@@ -244,6 +273,58 @@ function renderCalendar() {
     ? ` ${gapCount} dashed day${gapCount === 1 ? '' : 's'} had a stream but no archived start time.`
     : '';
   $('#card-foot').innerHTML = `${measured}${missing} Gray days had no stream; dashed days are missing data. Both are left out of the stats.`;
+}
+
+function renderMonths(host, year) {
+  const today = todayKey();
+
+  for (let m = 0; m < 12; m++) {
+    const block = document.createElement('section');
+    block.className = 'month-block';
+
+    const name = document.createElement('h3');
+    name.className = 'month-name';
+    name.textContent = MONTH_NAMES[m];
+
+    const weekdays = document.createElement('div');
+    weekdays.className = 'month-weekdays';
+    weekdays.setAttribute('aria-hidden', 'true');
+    weekdays.append(
+      ...GRID_DAYS.map((label) => {
+        const span = document.createElement('span');
+        span.textContent = label;
+        return span;
+      }),
+    );
+
+    const grid = document.createElement('div');
+    grid.className = 'month-days';
+    grid.setAttribute('role', 'list');
+
+    // Month blocks are Monday-first too, padded with blank cells so the
+    // weekday columns line up.
+    const first = new Date(Date.UTC(year, m, 1));
+    const last = new Date(Date.UTC(year, m + 1, 0));
+    const start = new Date(first);
+    start.setUTCDate(first.getUTCDate() - ((first.getUTCDay() + 6) % 7));
+    const end = new Date(last);
+    end.setUTCDate(last.getUTCDate() + (6 - ((last.getUTCDay() + 6) % 7)));
+
+    for (let ms = start.getTime(); ms <= end.getTime(); ms += MS_DAY) {
+      const date = new Date(ms);
+      if (date.getUTCMonth() !== m) {
+        const blank = document.createElement('div');
+        blank.className = 'day blank';
+        blank.setAttribute('aria-hidden', 'true');
+        grid.append(blank);
+      } else {
+        grid.append(buildDayCell(date, today));
+      }
+    }
+
+    block.append(name, weekdays, grid);
+    host.append(block);
+  }
 }
 
 function renderBlock(gridStart, startWeek, weekCount, year) {
@@ -409,6 +490,86 @@ function setupTooltip() {
   window.addEventListener('scroll', hide, { passive: true });
 }
 
+/* ---------- view toggle ---------- */
+
+function storedView() {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'months' ? 'months' : 'year';
+  } catch {
+    return 'year';
+  }
+}
+
+function setView(view) {
+  state.view = view;
+  try {
+    localStorage.setItem(VIEW_KEY, view);
+  } catch {
+    // storage can be unavailable; the toggle still works for this load
+  }
+  syncViewControls();
+  if (!state.days.size) return;
+  renderCalendar();
+  const wrap = document.querySelector('.calendar-wrap');
+  if (wrap) wrap.scrollLeft = 0;
+  scrollToToday();
+}
+
+function syncViewControls() {
+  for (const button of document.querySelectorAll('[data-view]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.view === state.view));
+  }
+  const perRow = $('#per-row-toggle');
+  if (perRow) perRow.hidden = state.view !== 'months';
+}
+
+function setupViewToggle() {
+  syncViewControls();
+  for (const button of document.querySelectorAll('[data-view]')) {
+    button.addEventListener('click', () => {
+      if (button.dataset.view !== state.view) setView(button.dataset.view);
+    });
+  }
+}
+
+function storedMonthsPerRow() {
+  try {
+    const columns = Number(localStorage.getItem(COLUMNS_KEY));
+    return MONTH_COLUMNS.includes(columns) ? columns : 3;
+  } catch {
+    return 3;
+  }
+}
+
+function setMonthsPerRow(columns) {
+  state.monthsPerRow = columns;
+  try {
+    localStorage.setItem(COLUMNS_KEY, String(columns));
+  } catch {
+    // storage can be unavailable; the toggle still works for this load
+  }
+  for (const button of document.querySelectorAll('#per-row-toggle [data-columns]')) {
+    button.setAttribute('aria-pressed', String(Number(button.dataset.columns) === columns));
+  }
+  if (state.view !== 'months' || !state.days.size) return;
+  renderCalendar();
+  const wrap = document.querySelector('.calendar-wrap');
+  if (wrap) wrap.scrollLeft = 0;
+}
+
+function setupPerRowToggle() {
+  for (const button of document.querySelectorAll('#per-row-toggle [data-columns]')) {
+    button.setAttribute(
+      'aria-pressed',
+      String(Number(button.dataset.columns) === state.monthsPerRow),
+    );
+    button.addEventListener('click', () => {
+      const columns = Number(button.dataset.columns);
+      if (columns !== state.monthsPerRow) setMonthsPerRow(columns);
+    });
+  }
+}
+
 /* ---------- boot ---------- */
 
 function scrollToToday() {
@@ -445,6 +606,8 @@ async function init() {
 
   state.days = buildDays(Array.isArray(data.streams) ? data.streams : []);
   state.gaps = new Set(Array.isArray(data.gaps) ? data.gaps : []);
+  state.view = storedView();
+  state.monthsPerRow = storedMonthsPerRow();
   const keys = [...state.days.keys()].sort();
   state.trackingSince = keys[0] ?? null;
   state.latest = keys.at(-1) ?? null;
@@ -456,6 +619,8 @@ async function init() {
   renderStats();
   renderCalendar();
   setupTooltip();
+  setupViewToggle();
+  setupPerRowToggle();
   scrollToToday();
 
   window.matchMedia('(max-width: 860px)').addEventListener('change', () => {
