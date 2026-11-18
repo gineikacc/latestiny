@@ -282,13 +282,14 @@ function renderBlock(gridStart, startWeek, weekCount, year) {
   weeks.className = 'weeks';
   weeks.style.gridTemplateColumns = `repeat(${weekCount}, var(--tile))`;
   weeks.setAttribute('role', 'list');
+  const today = todayKey();
 
   for (let w = 0; w < weekCount; w++) {
     for (let d = 0; d < 7; d++) {
       const date = new Date(gridStart.getTime() + (startWeek + w) * 7 * MS_DAY + d * MS_DAY);
       if (date.getUTCFullYear() !== year) continue;
 
-      const cell = buildDayCell(date);
+      const cell = buildDayCell(date, today);
       cell.style.gridColumn = String(w + 1);
       cell.style.gridRow = String(d + 1);
       weeks.append(cell);
@@ -300,10 +301,9 @@ function renderBlock(gridStart, startWeek, weekCount, year) {
   return block;
 }
 
-function buildDayCell(date) {
+function buildDayCell(date, today) {
   const key = keyOf(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
   const day = state.days.get(key);
-  const today = todayKey();
   const cell = document.createElement('div');
   cell.className = 'day';
   cell.setAttribute('role', 'listitem');
@@ -334,10 +334,8 @@ function fmtTime(ms) {
 }
 
 function startTimeLabel(day) {
-  const sameDay =
-    partsOf(day.startMs).year === day.year &&
-    partsOf(day.startMs).month === day.month &&
-    partsOf(day.startMs).day === day.day;
+  const p = partsOf(day.startMs);
+  const sameDay = p.year === day.year && p.month === day.month && p.day === day.day;
   return sameDay
     ? fmtTime(day.startMs)
     : `${weekdayFmt.format(new Date(day.startMs))} ${fmtTime(day.startMs)}`;
@@ -391,6 +389,9 @@ function setupTooltip() {
   calendar.addEventListener('pointerdown', (event) => {
     const cell = event.target.closest('.day[data-tip]');
     if (cell) show(cell);
+  });
+  document.addEventListener('pointerdown', (event) => {
+    if (!event.target.closest('.day[data-tip]')) hide();
   });
   window.addEventListener('scroll', hide, { passive: true });
 }
