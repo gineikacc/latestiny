@@ -83,7 +83,7 @@ h1 {
   line-height: 1.15;
 }
 
-.sub {
+.sub p {
   margin: 0;
   max-width: 54ch;
   color: var(--muted);
