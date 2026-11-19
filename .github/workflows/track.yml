@@ -5,6 +5,11 @@ on:
     # Every 15 minutes. GitHub may start scheduled runs a little late, but the
     # start time always comes from Kick's API, not from when this job runs.
     - cron: '*/15 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/track.yml'
+      - 'scripts/update.mjs'
   workflow_dispatch:
 
 permissions:
