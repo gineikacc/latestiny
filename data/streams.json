@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "source": "kick.com/destiny + kicktracker.net + LWOD archive",
-  "updatedAt": "2026-11-18T20:14:17.849Z",
+  "updatedAt": "2026-11-19T11:02:40.661Z",
   "gaps": [
     "2026-07-10"
   ],
@@ -1985,6 +1985,13 @@
       "start": "2026-11-17T18:29:41.000Z",
       "duration": 22758,
       "title": "In my Estimation it is Time to Deploy the Stream",
+      "source": "kick"
+    },
+    {
+      "id": "kick-138792656",
+      "start": "2026-11-19T06:25:25.000Z",
+      "duration": 11174,
+      "title": "shhhh",
       "source": "kick"
     }
   ]
