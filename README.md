@@ -19,7 +19,7 @@ sources:
 | --- | --- | --- |
 | Jan 1 – Mar 22, 2026 | [Last Week on Destiny](https://drive.google.com/drive/folders/1ps_MLBmyGmdwlMSj-AfkAfm5fXWjls-J) (LWOD) community spreadsheets | minute |
 | Mar 23 – Nov 17, 2026 | [KickTracker](https://kicktracker.net/destiny/streams) stream history, cross-checked against LWOD | second |
-| Ongoing | Kick public channel API via [`.github/workflows/track.yml`](.github/workflows/track.yml) | second |
+| Ongoing | Kick public channel API via [`.github/workflows/track.yml`](.github/workflows/track.yml), with KickTracker as a fallback | second |
 
 KickTracker and Kick expose the real stream start time, so a late-running
 GitHub Actions job does not make a stream look later than it was. LWOD records
@@ -29,9 +29,10 @@ KickTracker has a few gaps, so LWOD fills those days, and an earlier LWOD event
 is kept when it predates the KickTracker stream.
 
 The workflow polls Kick every 15 minutes and commits `data/streams.json` only
-when something changes. When Kick supplies a start time for a day that already
-has an archived start, it replaces the archive entry. A genuinely separate
-earlier stream that day is kept.
+when something changes. If Kick's API rejects the runner, it falls back to
+KickTracker's public API instead of failing the run. When Kick supplies a start
+time for a day that already has an archived start, it replaces the archive
+entry. A genuinely separate earlier stream that day is kept.
 
 A few rules the site applies to the raw start times:
 

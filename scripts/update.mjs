@@ -12,6 +12,7 @@ const DATA_FILE = path.join(ROOT, 'data', 'streams.json');
 const SLUG = process.env.KICK_SLUG ?? 'destiny';
 const MIN_DURATION_SECONDS = 10 * 60; // ignore accidental sub-10-minute test streams
 const DEDUPE_WINDOW_MS = 90 * 60 * 1000; // same stream, different source
+const KICKTRACKER_URL = `https://kicktracker.net/api/stats/channels/${encodeURIComponent(SLUG)}/channel-streams`;
 
 const localDateFmt = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'America/New_York',
@@ -29,7 +30,7 @@ function localDateKey(iso) {
 const UA =
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
-async function getJson(url) {
+async function getJson(url, referer = `https://kick.com/${encodeURIComponent(SLUG)}`) {
   let lastError;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -38,7 +39,7 @@ async function getJson(url) {
           'User-Agent': UA,
           Accept: 'application/json',
           'Accept-Language': 'en-US,en;q=0.9',
-          Referer: `https://kick.com/${SLUG}`,
+          Referer: referer,
         },
         signal: AbortSignal.timeout(20_000),
       });
@@ -59,17 +60,17 @@ function kickDate(value) {
   return date.toISOString();
 }
 
-function makeEntry({ id, start, duration, title }) {
+function makeEntry({ id, start, duration, title, source = 'kick' }) {
   return {
-    id: `kick-${id}`,
+    id: `${source}-${id}`,
     start,
     duration: Number.isFinite(duration) ? duration : null,
     title: String(title ?? '').trim() || null,
-    source: 'kick',
+    source,
   };
 }
 
-async function main() {
+async function fetchKick() {
   const [channel, videos] = await Promise.all([
     getJson(`https://kick.com/api/v2/channels/${encodeURIComponent(SLUG)}`),
     getJson(`https://kick.com/api/v2/channels/${encodeURIComponent(SLUG)}/videos`),
@@ -103,6 +104,67 @@ async function main() {
     // Prefer a finished VOD (it has a duration) but never lose the start time.
     fetched.set(entry.id, existing ? { ...existing, start: entry.start } : entry);
   }
+
+  return fetched;
+}
+
+async function fetchKickTracker() {
+  const data = await getJson(
+    KICKTRACKER_URL,
+    `https://kicktracker.net/${encodeURIComponent(SLUG)}/streams`,
+  );
+
+  const fetched = new Map();
+
+  for (const stream of Array.isArray(data?.results) ? data.results : []) {
+    if (!stream?.start_time) continue;
+    const duration = Math.round(Number(stream.stream_duration_in_sec));
+    if (!Number.isFinite(duration) || duration < MIN_DURATION_SECONDS) continue;
+    const start = new Date(stream.start_time);
+    if (Number.isNaN(start.getTime())) continue;
+    const entry = makeEntry({
+      id: stream.id,
+      start: start.toISOString(),
+      duration,
+      title: stream.last_title,
+      source: 'kicktracker',
+    });
+    fetched.set(entry.id, entry);
+  }
+
+  return fetched;
+}
+
+async function fetchStreams() {
+  const results = await Promise.allSettled([fetchKick(), fetchKickTracker()]);
+  const fetched = new Map();
+  let available = 0;
+  const failures = [];
+
+  for (const [index, result] of results.entries()) {
+    const name = index === 0 ? 'Kick' : 'KickTracker';
+    if (result.status === 'fulfilled') {
+      available += 1;
+      for (const [id, stream] of result.value) {
+        if (!fetched.has(id)) fetched.set(id, stream);
+      }
+      continue;
+    }
+
+    const message = result.reason instanceof Error ? result.reason.message : String(result.reason);
+    failures.push(`${name}: ${message}`);
+    console.warn(`${name} fetch failed: ${message}`);
+  }
+
+  if (available === 0) {
+    throw new Error(`No stream source available (${failures.join('; ')})`);
+  }
+
+  return fetched;
+}
+
+async function main() {
+  const fetched = await fetchStreams();
 
   let current = { schema: 2, source: `kick.com/${SLUG}`, gaps: [], streams: [] };
   try {
