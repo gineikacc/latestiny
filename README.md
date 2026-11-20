@@ -83,4 +83,6 @@ You need a local server because the page fetches `data/streams.json`; opening
 - YouTube-only streams that never reached Kick may be missing.
 - If a stream starts and ends entirely between two checks, Kick's VOD list still
   catches it on the next run.
+- The workflow uses Node 26 because Kick's Cloudflare rejects the HTTP clients
+  in older Node versions with `403 Forbidden`.
 - Unofficial fan project, not affiliated with Destiny.
