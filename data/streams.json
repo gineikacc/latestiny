@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "source": "kick.com/destiny + kicktracker.net + LWOD archive",
-  "updatedAt": "2026-11-20T19:09:04.054Z",
+  "updatedAt": "2026-11-20T23:18:05.318Z",
   "gaps": [
     "2026-07-10"
   ],
@@ -2004,7 +2004,7 @@
     {
       "id": "kick-139171819",
       "start": "2026-11-20T18:59:39.000Z",
-      "duration": null,
+      "duration": 14985,
       "title": "chillin' like a villain",
       "source": "kick"
     }
