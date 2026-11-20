@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Fetch stream starts from Kick
+      - name: Fetch stream starts
         run: node scripts/update.mjs
 
       - name: Commit data if it changed
