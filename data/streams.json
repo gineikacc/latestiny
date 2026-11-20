@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "source": "kick.com/destiny + kicktracker.net + LWOD archive",
-  "updatedAt": "2026-11-19T11:02:40.661Z",
+  "updatedAt": "2026-11-20T19:09:04.054Z",
   "gaps": [
     "2026-07-10"
   ],
@@ -1992,6 +1992,20 @@
       "start": "2026-11-19T06:25:25.000Z",
       "duration": 11174,
       "title": "shhhh",
+      "source": "kick"
+    },
+    {
+      "id": "kick-138949947",
+      "start": "2026-11-19T20:54:15.000Z",
+      "duration": 20780,
+      "title": "The Blue Wave 1800 ET tonight!",
+      "source": "kick"
+    },
+    {
+      "id": "kick-139171819",
+      "start": "2026-11-20T18:59:39.000Z",
+      "duration": null,
+      "title": "chillin' like a villain",
       "source": "kick"
     }
   ]
