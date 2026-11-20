@@ -19,7 +19,7 @@ sources:
 | --- | --- | --- |
 | Jan 1 – Mar 22, 2026 | [Last Week on Destiny](https://drive.google.com/drive/folders/1ps_MLBmyGmdwlMSj-AfkAfm5fXWjls-J) (LWOD) community spreadsheets | minute |
 | Mar 23 – Nov 17, 2026 | [KickTracker](https://kicktracker.net/destiny/streams) stream history, cross-checked against LWOD | second |
-| Ongoing | Kick public channel API via [`.github/workflows/track.yml`](.github/workflows/track.yml), with KickTracker and Jina Reader fallbacks | second |
+| Ongoing | Kick public channel API via [`.github/workflows/track.yml`](.github/workflows/track.yml), with KickTracker as a fallback | second |
 
 KickTracker and Kick expose the real stream start time, so a late-running
 GitHub Actions job does not make a stream look later than it was. LWOD records
@@ -29,12 +29,11 @@ KickTracker has a few gaps, so LWOD fills those days, and an earlier LWOD event
 is kept when it predates the KickTracker stream.
 
 The workflow polls Kick every 15 minutes and commits `data/streams.json` only
-when something changes. If Kick's API rejects the runner, it retries through
-Jina Reader and also checks KickTracker's public API. If every source is
-unavailable, the run logs a warning and keeps the last known data instead of
-failing. When Kick supplies a start time for a day that already has an archived
-start, it replaces the archive entry. A genuinely separate earlier stream that
-day is kept.
+when something changes. It also checks KickTracker's public API. If every
+source is unavailable, the run logs a warning and keeps the last known data
+instead of failing. When Kick supplies a start time for a day that already has
+an archived start, it replaces the archive entry. A genuinely separate earlier
+stream that day is kept.
 
 A few rules the site applies to the raw start times:
 
@@ -84,6 +83,4 @@ You need a local server because the page fetches `data/streams.json`; opening
 - YouTube-only streams that never reached Kick may be missing.
 - If a stream starts and ends entirely between two checks, Kick's VOD list still
   catches it on the next run.
-- Jina Reader is a public fallback used only when Kick blocks GitHub's runners;
-  it may be rate-limited.
 - Unofficial fan project, not affiliated with Destiny.

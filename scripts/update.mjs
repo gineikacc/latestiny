@@ -13,7 +13,6 @@ const SLUG = process.env.KICK_SLUG ?? 'destiny';
 const MIN_DURATION_SECONDS = 10 * 60; // ignore accidental sub-10-minute test streams
 const DEDUPE_WINDOW_MS = 90 * 60 * 1000; // same stream, different source
 const KICKTRACKER_URL = `https://kicktracker.net/api/stats/channels/${encodeURIComponent(SLUG)}/channel-streams`;
-const JINA_READER = 'https://r.jina.ai/';
 
 const localDateFmt = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'America/New_York',
@@ -54,50 +53,6 @@ async function getJson(url, referer = `https://kick.com/${encodeURIComponent(SLU
   throw lastError;
 }
 
-// GitHub-hosted runners are often blocked by Kick's Cloudflare rules. Jina
-// Reader fetches the same public JSON from a different network and wraps it in
-// a short text envelope, so strip that before parsing.
-async function getJinaJson(url) {
-  let lastError;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const res = await fetch(`${JINA_READER}${url}`, {
-        headers: {
-          'User-Agent': UA,
-          Accept: 'text/plain',
-          'X-No-Cache': 'true',
-        },
-        signal: AbortSignal.timeout(30_000),
-      });
-      if (!res.ok) throw new Error(`${res.status} ${res.statusText} for Jina Reader`);
-      const text = await res.text();
-      const marker = 'Markdown Content:';
-      const index = text.indexOf(marker);
-      if (index === -1) throw new Error('Jina Reader returned no content');
-      const content = text
-        .slice(index + marker.length)
-        .trim()
-        .replace(/^```(?:json)?\s*/i, '')
-        .replace(/\s*```$/, '');
-      return JSON.parse(content);
-    } catch (error) {
-      lastError = error;
-      if (attempt < 1) await new Promise((r) => setTimeout(r, 2000));
-    }
-  }
-  throw lastError;
-}
-
-async function getKickJson(url) {
-  try {
-    return await getJson(url);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn(`Kick direct fetch failed: ${message}; retrying through Jina Reader.`);
-    return await getJinaJson(url);
-  }
-}
-
 // Kick returns UTC timestamps without a zone, e.g. "2026-11-17 18:29:41".
 function kickDate(value) {
   const date = new Date(`${String(value).replace(' ', 'T')}Z`);
@@ -117,8 +72,8 @@ function makeEntry({ id, start, duration, title, source = 'kick' }) {
 
 async function fetchKick() {
   const [channel, videos] = await Promise.all([
-    getKickJson(`https://kick.com/api/v2/channels/${encodeURIComponent(SLUG)}`),
-    getKickJson(`https://kick.com/api/v2/channels/${encodeURIComponent(SLUG)}/videos`),
+    getJson(`https://kick.com/api/v2/channels/${encodeURIComponent(SLUG)}`),
+    getJson(`https://kick.com/api/v2/channels/${encodeURIComponent(SLUG)}/videos`),
   ]);
 
   const fetched = new Map();
